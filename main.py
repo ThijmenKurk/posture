@@ -77,9 +77,6 @@ def process(frame, pose):
 
 
 def record(results):
-    if len(results) == 0:
-        return
-
     global timings
 
     t = time_ms()
@@ -107,9 +104,6 @@ def record(results):
 
 
 def classify(model, results):
-    if len(results) == 0:
-        return
-
     global timings
 
     t = time_ms()
@@ -194,7 +188,6 @@ def pipeline(sources):
     for idx, source in enumerate(sources):
         result = pipeline_single(idx, *source)
         if not result[0]:
-            print("skipping since pose could not be determined for all sources")
             results.clear()
             break
         results.append(result[1:])
@@ -291,6 +284,11 @@ while True:
         ds, model = train_model()
 
     results = pipeline(sources)
+    if len(results) == 0:
+        print("skipping since pose could not be determined for all sources")
+        time.sleep(0.5)
+        continue
+
     prediction = record(results) if MODE == "record" else classify(model, results)
 
     if prediction == 1.0:
