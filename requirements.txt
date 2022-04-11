@@ -1,2 +1,6 @@
 opencv-python
 mediapipe
+nb_black
+numpy
+pandas
+scikit-learn

@@ -1,6 +1,3 @@
-# import the opencv library
-from re import S
-from black import T
 import cv2
 import numpy as np
 import mediapipe as mp
@@ -11,7 +8,6 @@ import os
 import sys
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
-from sklearn import metrics
 from mediapipe.framework.formats import landmark_pb2
 
 mp_drawing = mp.solutions.drawing_utils
