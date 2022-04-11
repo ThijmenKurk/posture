@@ -20,6 +20,8 @@ mp_pose = mp.solutions.pose
 
 timings = {}
 
+os.system("bash /home/thijmen/projects/posture/connect_droidcam.sh")
+
 MODE = sys.argv[1]
 assert MODE in ["record", "classify"]
 
@@ -36,7 +38,7 @@ if MODE == "classify":
 
 def desk_status():
     with open("/home/thijmen/desk_status") as f:
-        return f.read()
+        return f.read().strip()
 
 
 def get_samples_filename(desk_status):
@@ -205,7 +207,11 @@ def post_pipeline_single(idx, prediction, frame, landmarks):
     draw_stats(frame, prediction, timings)
     timings[f"draw_stats{idx}"] = time_ms() - t
 
+    # frame = cv2.resize(frame, (320, 240))
+
     cv2.imshow(f"feed{idx}", frame)
+    cv2.namedWindow(f"feed{idx}", cv2.WND_PROP_FULLSCREEN)
+    cv2.setWindowProperty(f"feed{idx}", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 
 def post_pipeline(results, prediction):
@@ -243,6 +249,15 @@ def train_model():
     model = SVC(kernel="linear")
     model.fit(X, y)
 
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.25, random_state=42
+    )
+
+    model_t = SVC(kernel="linear")
+    model_t.fit(X_train, y_train)
+
+    print("score:", model_t.score(X_test, y_test))
+
     return ds, model
 
 
@@ -254,7 +269,7 @@ def wait_for_desk_transition():
 
 sources = [
     (
-        cv2.VideoCapture(0),
+        cv2.VideoCapture(2),
         mp_pose.Pose(
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5,
@@ -262,15 +277,15 @@ sources = [
         ),
         -90,
     ),
-    (
-        cv2.VideoCapture(1),
-        mp_pose.Pose(
-            min_detection_confidence=0.5,
-            min_tracking_confidence=0.5,
-            model_complexity=1,
-        ),
-        0,
-    ),
+    # (
+    #     cv2.VideoCapture(1),
+    #     mp_pose.Pose(
+    #         min_detection_confidence=0.5,
+    #         min_tracking_confidence=0.5,
+    #         model_complexity=1,
+    #     ),
+    #     0,
+    # ),
 ]
 
 ds = None
@@ -299,7 +314,7 @@ while True:
     if MODE == "record" and i % 100 == 0:
         print(f"{i} sample(s) collected...")
 
-    if MODE == "classify" and BEEP and time_ms() - last_good > 1000:
+    if MODE == "classify" and BEEP and time_ms() - last_good > 3000:
         if time_ms() - last_play > 1500:
             os.system("play -nq -t alsa synth 0.2 sine 440")
             last_play = time_ms()
