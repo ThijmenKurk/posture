@@ -52,7 +52,7 @@ SOURCES = [
 ]
 # Landmarks are basically the points identified by mediapipe, each representing a certain joint or body part.
 # This array is used to determine the landmarks (which may differ per source) to train the model with.
-LANDMARK_INDICES = [list(range(33)), list()]  # Source 1  # Source 2
+LANDMARK_INDICES = [list(range(12)), list()]  # Source 1  # Source 2
 MODE = sys.argv[2]
 
 if not MODE in ["record", "classify"]:
@@ -309,18 +309,18 @@ def train_model():
     y = df["ps"]  # posture status
 
     # Train model on entire dataset
-    model = SVC(kernel="linear")
-    model.fit(X, y)
+    model_full = SVC(kernel="linear")
+    model_full.fit(X, y)
 
     # Give score based on train-test-split for reference
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.25, random_state=42
     )
-    model_t = SVC(kernel="linear")
-    model_t.fit(X_train, y_train)
-    print("score:", model_t.score(X_test, y_test))
+    model = SVC(kernel="linear")
+    model.fit(X_train, y_train)
+    print("score:", model.score(X_test, y_test))
 
-    return desk_status, model
+    return desk_status, model_full
 
 
 desk_status = None
@@ -346,11 +346,6 @@ while True:
     if prediction == 1.0:
         time_of_last_good_posture = current_time_in_milliseconds()
 
-    post_pipeline(results, prediction)
-
-    if MODE == "record" and i % 100 == 0:
-        print(f"{i} sample(s) collected...")
-
     if (
         MODE == "classify"
         and BEEP
@@ -359,6 +354,11 @@ while True:
         if current_time_in_milliseconds() - time_of_last_beep > 1500:
             os.system("play -nq -t alsa synth 0.2 sine 440")
             time_of_last_beep = current_time_in_milliseconds()
+
+    post_pipeline(results, prediction)
+
+    if MODE == "record" and i % 100 == 0:
+        print(f"{i} sample(s) collected...")
 
     i += 1
     if cv2.waitKey(1) & 0xFF == ord("q"):
